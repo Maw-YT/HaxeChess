@@ -47,6 +47,12 @@ You can test the project on various targets:
     openfl test windows   # or 'mac' / 'linux'
     ```
 
+## ⬇️ Download
+
+You can download the latest pre-compiled version for Windows from the [Releases](https://github.com/Maw-YT/HaxeChess/releases) page. 
+
+*Just download the `.zip`, extract it, and run `Chess.exe`!*
+
 ## 📂 Project Structure
 
 * `Source/`: Contains the `.hx` source code.
