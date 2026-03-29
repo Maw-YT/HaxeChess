@@ -115,16 +115,12 @@ class BoardManager {
         
         // 2. Check for En Passant capture
         var isEnPassant = false;
-        if (parsed.type == "pawn" && boardData[endY][endX] == "") {
-            // Pawn moved to empty square diagonally (capture move)
-            // Check if it's en passant (enemy pawn on the row we came from)
+        if (parsed.type == "pawn" && boardData[endY][endX] == "" && startX != endX) {
             if (lastMoveEnd != null && lastMovedPiece != "" && lastMoveEnd.x == endX) {
                 var lastParsed = BoardUtils.parsePieceId(lastMovedPiece);
-                // Check if the last move was an enemy pawn moving 2 squares
                 if (lastParsed.type == "pawn" && lastParsed.color != parsed.color) {
                     var moveDistance = Math.abs(Std.int(lastMoveEnd.y) - Std.int(lastMoveStart.y));
                     if (moveDistance == 2) {
-                        // This is en passant! Remove the enemy pawn from where it now is (same rank as us)
                         var captureRow = Std.int(lastMoveEnd.y);
                         boardData[captureRow][endX] = "";
                         isEnPassant = true;
