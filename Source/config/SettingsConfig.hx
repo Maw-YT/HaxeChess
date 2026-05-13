@@ -99,6 +99,8 @@ class SettingsConfig {
             var file = sys.io.File.write(settingsPath);
             file.writeString(savedData);
             file.close();
+            #elseif js
+            js.Browser.window.localStorage.setItem("ChessSettings", savedData);
             #else
             openfl.utils.SharedObject.getLocal("ChessSettings").setData({
                 uciEnginePath: uciEnginePath
@@ -118,6 +120,52 @@ class SettingsConfig {
             #if sys
             if (sys.FileSystem.exists(getSettingsPath())) {
                 var content = sys.io.File.getContent(getSettingsPath());
+                var data = haxe.Json.parse(content);
+                uciEnginePath = Reflect.field(data, "uciEnginePath") != null ? data.uciEnginePath : "";
+                engineProfiles = [];
+                engineOptionOverrides = new Map();
+                var ep = Reflect.field(data, "engineProfiles");
+                if (ep != null && Std.isOfType(ep, Array)) {
+                    for (x in cast(ep, Array<Dynamic>)) {
+                        var id = Reflect.field(x, "id");
+                        var lab = Reflect.field(x, "label");
+                        var pth = Reflect.field(x, "path");
+                        if (id != null && lab != null && pth != null)
+                            engineProfiles.push({id: Std.string(id), label: Std.string(lab), path: Std.string(pth)});
+                    }
+                }
+                activeEngineId = Reflect.field(data, "activeEngineId") != null ? Std.string(data.activeEngineId) : "";
+                var eo = Reflect.field(data, "engineOptionOverrides");
+                if (eo != null) {
+                    for (pid in Reflect.fields(eo)) {
+                        var inner = Reflect.field(eo, pid);
+                        var m = new Map<String, String>();
+                        if (inner != null)
+                            for (k in Reflect.fields(inner))
+                                m.set(k, Std.string(Reflect.field(inner, k)));
+                        engineOptionOverrides.set(pid, m);
+                    }
+                }
+                enginePlayAs = Reflect.field(data, "enginePlayAs") != null ? data.enginePlayAs : "black";
+                engineDepth = Reflect.field(data, "engineDepth") != null ? data.engineDepth : 15;
+                engineTimeMs = Reflect.field(data, "engineTimeMs") != null ? data.engineTimeMs : 1000;
+                builtinEvalBackend = Reflect.field(data, "builtinEvalBackend") != null ? Std.string(data.builtinEvalBackend) : "classical";
+                builtinNetPath = Reflect.field(data, "builtinNetPath") != null ? Std.string(data.builtinNetPath) : "";
+                builtinTablebasePath = Reflect.field(data, "builtinTablebasePath") != null ? Std.string(data.builtinTablebasePath) : "";
+                engineHashMb = Reflect.field(data, "engineHashMb") != null ? data.engineHashMb : "";
+                engineThreads = Reflect.field(data, "engineThreads") != null ? data.engineThreads : "";
+                allowIllegalMoves = Reflect.field(data, "allowIllegalMoves") == true;
+                boardLayoutId = Reflect.field(data, "boardLayoutId") != null ? data.boardLayoutId : config.BoardLayout.DEFAULT_LAYOUT_ID;
+                timeControlPreset = Reflect.field(data, "timeControlPreset") != null ? data.timeControlPreset : "none";
+                clockIncrementSeconds = Reflect.field(data, "clockIncrementSeconds") != null ? Std.int(data.clockIncrementSeconds) : 0;
+                windowFullscreen = Reflect.field(data, "windowFullscreen") == true;
+                migrateEngineProfilesIfNeeded();
+            } else {
+                migrateEngineProfilesIfNeeded();
+            }
+            #elseif js
+            var content = js.Browser.window.localStorage.getItem("ChessSettings");
+            if (content != null) {
                 var data = haxe.Json.parse(content);
                 uciEnginePath = Reflect.field(data, "uciEnginePath") != null ? data.uciEnginePath : "";
                 engineProfiles = [];

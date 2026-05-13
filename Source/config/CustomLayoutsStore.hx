@@ -182,6 +182,10 @@ class CustomLayoutsStore {
                 var raw = sys.io.File.getContent(p);
                 parseJson(raw);
             }
+            #elseif js
+            var raw = js.Browser.window.localStorage.getItem("ChessCustomLayouts");
+            if (raw != null)
+                parseJson(raw);
             #else
             var so = openfl.utils.SharedObject.getLocal("ChessCustomLayouts");
             var raw = Reflect.field(so.data, "json");
@@ -203,6 +207,8 @@ class CustomLayoutsStore {
             if (!sys.FileSystem.exists(dir))
                 sys.FileSystem.createDirectory(dir);
             sys.io.File.saveContent(p, payload);
+            #elseif js
+            js.Browser.window.localStorage.setItem("ChessCustomLayouts", payload);
             #else
             var so = openfl.utils.SharedObject.getLocal("ChessCustomLayouts");
             Reflect.setField(so.data, "json", payload);
