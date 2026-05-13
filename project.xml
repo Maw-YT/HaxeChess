@@ -4,13 +4,18 @@
 	<meta title="Chess" package="com.sample.chess" version="1.0.0" company="Company Name" />
 	<app main="Main" path="Export" file="Chess" />
 
-	<window width="680" height="712" background="#000000" fps="60" allow-high-dpi="true" resizable="false" borderless="true" transparent="true" />
+	<!-- Match UIPanel: board + history + padding; height includes top/bottom clock bands -->
+	<!-- Outer size; client area is smaller when OS title bar is present. -->
+	<window width="860" height="804" background="#1A1A1A" fps="60" allow-high-dpi="true" resizable="true" borderless="false" transparent="false" />
 	
 	<source path="Source" />
 	
 	<haxelib name="openfl" />
 	<haxelib name="actuate" />
 	
-	<assets path="Assets" rename="assets" />
+	<!-- Native Windows: Lime/OpenAL decodes OGG/Vorbis reliably; MP3 often fails. Prefer .ogg; keep .mp3 for HTML5 fallback. -->
+	<assets path="Assets" rename="assets" exclude="*.mp3|*.ogg" />
+	<assets path="Assets" rename="assets" include="*.ogg" type="sound" />
+	<assets path="Assets" rename="assets" include="*.mp3" type="sound" />
 	
 </project>

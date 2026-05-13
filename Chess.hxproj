@@ -42,6 +42,8 @@
     <option showHiddenPaths="False" />
     <option testMovie="Custom" />
     <option testMovieCommand="" />
+    <!-- Lime/OpenFL: use native Windows (C++) build, not HTML5 -->
+    <option targetBuild="windows" />
   </options>
   <!-- Plugin storage -->
   <storage />
