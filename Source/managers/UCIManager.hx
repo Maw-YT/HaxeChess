@@ -2,13 +2,15 @@ package managers;
 
 import config.SettingsConfig;
 import StringTools;
+#if !js
 import sys.io.Process;
-import haxe.Timer;
 import haxe.io.Eof;
-import openfl.events.EventDispatcher;
-import openfl.events.Event;
 import sys.thread.Thread;
 import sys.thread.Mutex;
+#end
+import haxe.Timer;
+import openfl.events.EventDispatcher;
+import openfl.events.Event;
 
 /**
  * Manages communication with UCI chess engines
@@ -17,17 +19,19 @@ import sys.thread.Mutex;
 class UCIManager extends EventDispatcher {
     private static var instance:UCIManager;
     
+    #if !js
     private var process:Process;
+    private var readThread:Thread;
+    private var outputMutex:Mutex;
+    private var outputLines:Array<String>;
+    private var processTimer:Timer;
+    #end
     private var isEngineRunning:Bool = false;
     private var engineName:String = "";
     private var engineAuthor:String = "";
     private var isReady:Bool = false;
     private var pendingMoves:Array<String->Void> = [];
     private var currentEnginePath:String = "";
-    private var readThread:Thread;
-    private var outputMutex:Mutex;
-    private var outputLines:Array<String>;
-    private var processTimer:Timer;
     private var recentLogLines:Array<String> = [];
     private var maxRecentLogLines:Int = 400;
     
@@ -45,8 +49,10 @@ class UCIManager extends EventDispatcher {
     
     private function new() {
         super();
+        #if !js
         outputMutex = new Mutex();
         outputLines = [];
+        #end
     }
     
     public static function getInstance():UCIManager {
@@ -76,6 +82,13 @@ class UCIManager extends EventDispatcher {
             dispatchEvent(new Event(ENGINE_READY));
             return true;
         }
+        
+        #if js
+        // For HTML5, only built-in engine is supported
+        trace("External engines not supported in HTML5. Use built-in engine.");
+        dispatchEvent(new Event(ENGINE_ERROR));
+        return false;
+        #end
         
         if (enginePath == null || enginePath == "") {
             trace("No engine path configured");
@@ -116,6 +129,7 @@ class UCIManager extends EventDispatcher {
             isEngineRunning = true;
             isReady = false;
             
+            #if !js
             // Clear output buffer
             outputLines = [];
             
@@ -124,6 +138,7 @@ class UCIManager extends EventDispatcher {
             
             // Start processing timer on main thread
             startProcessTimer();
+            #end
             
             // Initialize UCI protocol (options stream until uciok)
             engineOptionsList = [];
@@ -166,6 +181,7 @@ class UCIManager extends EventDispatcher {
         isEngineRunning = false;
         isReady = false;
 
+        #if !js
         outputMutex.acquire();
         outputLines = [];
         outputMutex.release();
@@ -187,6 +203,7 @@ class UCIManager extends EventDispatcher {
                 p.close();
             } catch (_:Dynamic) {}
         }
+        #end
 
         dispatchEvent(new Event(ENGINE_ERROR));
     }
@@ -203,6 +220,7 @@ class UCIManager extends EventDispatcher {
      * Send a command to the engine
      */
     public function sendCommand(command:String):Void {
+        #if !js
         if (!isEngineRunning || process == null) return;
         
         try {
@@ -213,11 +231,13 @@ class UCIManager extends EventDispatcher {
             trace("Error sending command: " + e);
             dispatchEvent(new Event(ENGINE_ERROR));
         }
+        #end
     }
     
     /**
      * Start the reading thread
      */
+    #if !js
     private function startReadThread():Void {
         readThread = Thread.create(function() {
             while (isEngineRunning && process != null) {
@@ -276,6 +296,7 @@ class UCIManager extends EventDispatcher {
             }
         }
     }
+    #end
     
     /**
      * Parse a response line from the engine
