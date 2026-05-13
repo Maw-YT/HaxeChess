@@ -14,6 +14,7 @@ class BasePiece implements IPiece {
     private var _type:String;
     private var _color:String;
     private var _isRoyal:Bool = false;
+    private var _canEnPassant:Bool = false;
     private var _value:Int = 0;
     
     public function new(type:String, color:String) {
@@ -71,7 +72,7 @@ class BasePiece implements IPiece {
     }
     
     /**
-     * Helper method for sliding pieces (rook, bishop, queen, nuke)
+     * Helper method for sliding pieces (rook, bishop, queen, etc.)
      */
     public function getSlidingMoves(startRow:Int, startCol:Int, dirs:Array<{r:Int, c:Int}>, board:Array<Array<String>>):Array<Point> {
         return MoveUtils.getSlidingMoves(startRow, startCol, dirs, board, _color);
@@ -82,5 +83,16 @@ class BasePiece implements IPiece {
      */
     public function getStepMoves(startRow:Int, startCol:Int, offsets:Array<{r:Int, c:Int}>, board:Array<Array<String>>):Array<Point> {
         return MoveUtils.getStepMoves(startRow, startCol, offsets, board, _color);
+    }
+
+    public function canEnPassant():Bool {
+        return _canEnPassant;
+    }
+    
+    /**
+     * Set whether this piece can participate in en passant
+     */
+    public function setCanEnPassant(value:Bool):Void {
+        this._canEnPassant = value;
     }
 }

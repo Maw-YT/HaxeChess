@@ -8,7 +8,7 @@ import openfl.geom.Point;
  */
 interface IPiece {
     /**
-     * Get the piece type (e.g., "pawn", "rook", "nuke")
+     * Get the piece type (e.g., "pawn", "rook", "amazon")
      */
     function getType():String;
     
@@ -42,4 +42,9 @@ interface IPiece {
      * Useful for pieces that capture differently than they move (like pawns)
      */
     function getCaptureMoves(row:Int, col:Int, board:Array<Array<String>>):Array<Point>;
+    
+    /**
+     * Check if this piece can participate in en passant (both as attacker and victim)
+     */
+    function canEnPassant():Bool;
 }

@@ -22,7 +22,7 @@ class MoveUtils {
                     moves.push(new Point(nc, nr));
                 } else {
                     // Can capture enemy piece, but can't go further
-                    if (BoardUtils.isEnemyPiece(board, nr, nc, color)) {
+                    if (BoardUtils.isEnemyPiece(board, nr, nc, color) && !BoardUtils.isSquareProtectedByShield(nr, nc, board)) {
                         moves.push(new Point(nc, nr));
                     }
                     break;
@@ -47,7 +47,9 @@ class MoveUtils {
             var nc = startCol + off.c;
             
             if (BoardUtils.isValidPosition(nr, nc)) {
-                if (BoardUtils.isPositionEmpty(board, nr, nc) || BoardUtils.isEnemyPiece(board, nr, nc, color)) {
+                if (BoardUtils.isPositionEmpty(board, nr, nc)) {
+                    moves.push(new Point(nc, nr));
+                } else if (BoardUtils.isEnemyPiece(board, nr, nc, color) && !BoardUtils.isSquareProtectedByShield(nr, nc, board)) {
                     moves.push(new Point(nc, nr));
                 }
             }
@@ -66,6 +68,54 @@ class MoveUtils {
             }
         }
         return false;
+    }
+
+    /** Combine move lists without duplicate squares. */
+    public static function mergeUniquePoints(a:Array<Point>, b:Array<Point>):Array<Point> {
+        var seen = new Map<String, Bool>();
+        var out:Array<Point> = [];
+        for (p in a) {
+            var k = Std.int(p.x) + "," + Std.int(p.y);
+            if (seen.exists(k))
+                continue;
+            seen.set(k, true);
+            out.push(new Point(p.x, p.y));
+        }
+        for (p in b) {
+            var k2 = Std.int(p.x) + "," + Std.int(p.y);
+            if (seen.exists(k2))
+                continue;
+            seen.set(k2, true);
+            out.push(new Point(p.x, p.y));
+        }
+        return out;
+    }
+
+    /** Nightrider: repeated leaps in the same knight direction until blocked. */
+    public static function getKnightRiderMoves(startRow:Int, startCol:Int, board:Array<Array<String>>, color:String):Array<Point> {
+        var dirs = [
+            {r: 2, c: 1}, {r: 2, c: -1}, {r: -2, c: 1}, {r: -2, c: -1},
+            {r: 1, c: 2}, {r: 1, c: -2}, {r: -1, c: 2}, {r: -1, c: -2}
+        ];
+        var moves:Array<Point> = [];
+        for (d in dirs) {
+            var n = 1;
+            while (true) {
+                var nr = startRow + d.r * n;
+                var nc = startCol + d.c * n;
+                if (!BoardUtils.isValidPosition(nr, nc))
+                    break;
+                if (BoardUtils.isPositionEmpty(board, nr, nc)) {
+                    moves.push(new Point(nc, nr));
+                    n++;
+                } else if (BoardUtils.isEnemyPiece(board, nr, nc, color) && !BoardUtils.isSquareProtectedByShield(nr, nc, board)) {
+                    moves.push(new Point(nc, nr));
+                    break;
+                } else
+                    break;
+            }
+        }
+        return moves;
     }
     
     /**

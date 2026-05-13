@@ -1,8 +1,8 @@
 package ui;
 
 import openfl.display.Sprite;
-import openfl.display.Shape;
-import openfl.events.MouseEvent;
+import openfl.display.Stage;
+import openfl.events.Event;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 
@@ -11,7 +11,8 @@ import openfl.text.TextFormat;
  * Displays 4 pieces: Queen, Rook, Bishop, Knight with piece images
  */
 class PromotionMenu extends Sprite {
-    private var bgDim:Shape;
+    /** Full-stage hit layer so clicks do not reach the board (Shape is not interactive). */
+    private var overlayHit:Sprite;
     private var container:Sprite;
     private var selectedPiece:String;
     private var onSelectCallback:String->Void;
@@ -21,23 +22,24 @@ class PromotionMenu extends Sprite {
     private var bishopBtn:PromotionButton;
     private var knightBtn:PromotionButton;
     private var playerColor:String = "w";
+    private var stageResizeBound:Bool = false;
+    private static inline var MENU_W:Float = 300;
+    private static inline var MENU_H:Float = 220;
     
     public function new() {
         super();
         
-        // Semi-transparent overlay
-        bgDim = new Shape();
-        bgDim.graphics.beginFill(0x000000, 0.5);
-        bgDim.graphics.drawRect(0, 50, 680, 662); // Cover entire stage except top bar, so you can quit if needed.
-        bgDim.graphics.endFill();
-        addChild(bgDim);
+        overlayHit = new Sprite();
+        overlayHit.mouseEnabled = true;
+        overlayHit.mouseChildren = false;
+        addChild(overlayHit);
         
         // Container for the menu
         container = new Sprite();
         addChild(container);
         
         // Draw menu background
-        var menuBg = new Shape();
+        var menuBg = new Sprite();
         menuBg.graphics.beginFill(0x2A2A2A);
         menuBg.graphics.drawRoundRect(0, 0, 300, 220, 12, 12);
         menuBg.graphics.endFill();
@@ -92,28 +94,72 @@ class PromotionMenu extends Sprite {
         container.addChild(knightBtn);
         knightBtn.setOnClick(onKnightSelected);
         
-        // Center the container
-        container.x = (680 - 300) / 2;
-        container.y = (712 - 220) / 2;
-        
         visible = false;
+
+        addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+    }
+
+    private function onAddedToStage(_:Event):Void {
+        if (visible && stage != null)
+            layoutOverlay(Std.int(stage.stageWidth), Std.int(stage.stageHeight));
+    }
+    
+    private function bindStageResize():Void {
+        if (stageResizeBound || stage == null)
+            return;
+        stage.addEventListener(Event.RESIZE, onStageResize);
+        stageResizeBound = true;
+    }
+    
+    private function unbindStageResize():Void {
+        if (!stageResizeBound || stage == null)
+            return;
+        stage.removeEventListener(Event.RESIZE, onStageResize);
+        stageResizeBound = false;
+    }
+    
+    private function onStageResize(e:Event):Void {
+        if (!visible)
+            return;
+        var stg = Std.isOfType(e.currentTarget, Stage) ? cast(e.currentTarget, Stage) : null;
+        if (stg == null)
+            return;
+        layoutOverlay(Std.int(stg.stageWidth), Std.int(stg.stageHeight));
+    }
+    
+    private function layoutOverlay(sw:Int, sh:Int):Void {
+        if (sw < 1)
+            sw = 1;
+        if (sh < 1)
+            sh = 1;
+        overlayHit.graphics.clear();
+        overlayHit.graphics.beginFill(0x000000, 0.55);
+        overlayHit.graphics.drawRect(0, 0, sw, sh);
+        overlayHit.graphics.endFill();
+        container.x = (sw - MENU_W) * 0.5;
+        container.y = (sh - MENU_H) * 0.5;
     }
     
     public function show(callback:String->Void, playerColor:String = "w"):Void {
         this.playerColor = playerColor;
         onSelectCallback = callback;
         visible = true;
-        // Ensure buttons are interactive
         mouseChildren = true;
         mouseEnabled = true;
         
-        // Recreate buttons with correct player color
+        if (stage != null)
+            layoutOverlay(Std.int(stage.stageWidth), Std.int(stage.stageHeight));
+        else
+            layoutOverlay(860, 804);
+        bindStageResize();
+        
         recreateButtons();
     }
     
     public function hide():Void {
         visible = false;
         mouseEnabled = false;
+        unbindStageResize();
     }
     
     private function recreateButtons():Void {

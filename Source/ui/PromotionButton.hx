@@ -1,11 +1,9 @@
 package ui;
 
-import openfl.display.Sprite;
+import config.GameConfig;
 import openfl.display.Bitmap;
-import openfl.display.Loader;
-import openfl.net.URLRequest;
-import openfl.events.Event;
-import openfl.events.IOErrorEvent;
+import openfl.display.Sprite;
+import openfl.utils.Assets;
 
 /**
  * A clickable promotion button showing a piece image
@@ -14,60 +12,38 @@ class PromotionButton extends Sprite {
     private var pieceName:String;
     private var color:String;
     private var onClickCallback:Void->Void;
-    private var targetSize:Float;
+    private var btnSize:Float;
     
     public function new(pieceName:String, color:String, size:Float = 64) {
         super();
         this.pieceName = pieceName;
         this.color = color;
-        this.targetSize = size * 1.2; // Button size slightly larger than image for padding
+        this.btnSize = size;
 
-        // 1. Draw the Rounded Rectangle Background
-        graphics.beginFill(0x444444); // Dark grey color
-        graphics.drawRoundRect(0, 0, size, size, 15, 15); // x, y, width, height, ellipseW, ellipseH
+        graphics.beginFill(0x444444);
+        graphics.drawRoundRect(0, 0, size, size, 15, 15);
         graphics.endFill();
 
-        // 2. Load the image
-        var imagePath = "Assets/" + pieceName + "-" + color + ".png";
-        var loader = new Loader();
-        loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onLoadComplete);
-        loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onLoadError);
-        
-        try {
-            loader.load(new URLRequest(imagePath));
-        } catch (e:Dynamic) {
-            trace("Error loading piece image: " + imagePath + " - " + e);
-        }
-        
+        var assetPath = GameConfig.ASSETS_PATH + pieceName + "-" + color + ".png";
+        if (!Assets.exists(assetPath))
+            assetPath = GameConfig.ASSETS_PATH + GameConfig.MISSING_ASSET;
+
+        var bmp = new Bitmap(Assets.getBitmapData(assetPath));
+        bmp.smoothing = true;
+        var iw = size * 0.78;
+        var ih = size * 0.78;
+        bmp.width = iw;
+        bmp.height = ih;
+        bmp.x = (size - iw) * 0.5;
+        bmp.y = (size - ih) * 0.5;
+        addChild(bmp);
+
         buttonMode = true;
         useHandCursor = true;
-        
+
         addEventListener(openfl.events.MouseEvent.CLICK, onButtonClick);
         addEventListener(openfl.events.MouseEvent.MOUSE_OVER, onMouseOver);
         addEventListener(openfl.events.MouseEvent.MOUSE_OUT, onMouseOut);
-    }
-    
-    private function onLoadComplete(e:Event):Void {
-        var loader:Loader = cast(e.currentTarget.loader);
-        var image = loader.content;
-
-        // 3. Resize the image to fit inside the button
-        image.width = targetSize * 0.8;  // Slightly smaller than background for padding
-        image.height = targetSize * 0.8;
-        
-        // Center the image on the rectangle
-        image.x = (targetSize - image.width) / 2;
-        image.y = (targetSize - image.height) / 2;
-
-        if (Std.isOfType(image, Bitmap)) {
-            cast(image, Bitmap).smoothing = true; 
-        }
-
-        addChild(image); // Renders above the graphics background
-    }
-    
-    private function onLoadError(e:IOErrorEvent):Void {
-        trace("Failed to load piece image: " + pieceName + "-" + color + " - " + e.text);
     }
     
     private function onButtonClick(e:openfl.events.MouseEvent):Void {

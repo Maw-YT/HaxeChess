@@ -9,12 +9,14 @@ import managers.BoardManager;
 class Pawn extends BasePiece {
     public function new(color:String) {
         super("pawn", color);
+        setCanEnPassant(true);
     }
     
     override public function getValidMoves(currentRow:Int, currentCol:Int, board:Array<Array<String>>):Array<Point> {
         var moves:Array<Point> = [];
         var forward = (getColor() == "w") ? -1 : 1;
-        var startRow = (getColor() == "w") ? 6 : 1;
+        var boardRows = board.length;
+        var startRow = (getColor() == "w") ? (boardRows - 2) : 1;
         var nextR = currentRow + forward;
         
         // Move forward 1
@@ -41,34 +43,42 @@ class Pawn extends BasePiece {
         if (utils.BoardUtils.isValidPosition(nextR, 0)) {
             for (nc in diagCols) {
                 if (utils.BoardUtils.isValidPosition(nextR, nc)) {
-                    if (utils.BoardUtils.isEnemyPiece(board, nextR, nc, getColor())) {
+                    if (utils.BoardUtils.isEnemyPiece(board, nextR, nc, getColor()) && !utils.BoardUtils.isSquareProtectedByShield(nextR, nc, board)) {
                         captures.push(new Point(nc, nextR));
                     }
                 }
             }
         }
         
-        // En Passant capture
-        // Only available for pawns on the correct rank and when enemy just moved 2 squares
-        var onEnPassantRank = (getColor() == "w" && currentRow == 3) || (getColor() == "b" && currentRow == 4);
-        if (onEnPassantRank) {
-            var boardManager = managers.BoardManager.instance;
-            if (boardManager != null) {
-                var lastMoveStart = boardManager.getLastMoveStart();
-                var lastMoveEnd = boardManager.getLastMoveEnd();
-                var lastMovedPiece = boardManager.getLastMovedPiece();
-                
-                if (lastMoveStart != null && lastMoveEnd != null && lastMovedPiece != "") {
-                    var lastParsed = utils.BoardUtils.parsePieceId(lastMovedPiece);
-                    // Check if last move was enemy pawn moving 2 squares
-                    if (lastParsed.type == "pawn" && lastParsed.color != getColor()) {
-                        var moveDistance = Math.abs(Std.int(lastMoveEnd.y) - Std.int(lastMoveStart.y));
-                        if (moveDistance == 2) {
-                            // En passant is available if the enemy pawn is adjacent to us
-                            var enPassantCol = Std.int(lastMoveEnd.x);
-                            if (Math.abs(enPassantCol - currentCol) == 1) {
-                                // Can capture on the diagonal forward to that column
-                                captures.push(new Point(enPassantCol, nextR));
+        // En Passant capture - check if this piece can en passant
+        if (canEnPassant()) {
+            var boardRows = board.length;
+            var whiteEnPassantRank = 3; // black pawn double-step destination
+            var blackEnPassantRank = boardRows - 4; // white pawn double-step destination
+            var onEnPassantRank = (getColor() == "w" && currentRow == whiteEnPassantRank)
+                || (getColor() == "b" && currentRow == blackEnPassantRank);
+            if (onEnPassantRank) {
+                var boardManager = managers.BoardManager.instance;
+                if (boardManager != null) {
+                    var lastMoveStart = boardManager.getLastMoveStart();
+                    var lastMoveEnd = boardManager.getLastMoveEnd();
+                    var lastMovedPiece = boardManager.getLastMovedPiece();
+                    
+                    if (lastMoveStart != null && lastMoveEnd != null && lastMovedPiece != "") {
+                        var lastParsed = utils.BoardUtils.parsePieceId(lastMovedPiece);
+                        
+                        // Check if last moved piece can also be passanted
+                        var lastPiece = pieces.PieceFactory.createPiece(lastMovedPiece);
+                        if (lastPiece != null && lastPiece.canEnPassant() && lastParsed.color != getColor()) {
+                            var moveDistance = Math.abs(Std.int(lastMoveEnd.y) - Std.int(lastMoveStart.y));
+                            if (moveDistance == 2) {
+                                var enPassantCol = Std.int(lastMoveEnd.x);
+                                if (Math.abs(enPassantCol - currentCol) == 1) {
+                                    var captureRow = currentRow;
+                                    if (!utils.BoardUtils.isSquareProtectedByShield(captureRow, enPassantCol, board)) {
+                                        captures.push(new Point(enPassantCol, nextR));
+                                    }
+                                }
                             }
                         }
                     }

@@ -29,7 +29,7 @@ class King extends BasePiece {
         // Add castling moves - but only when NOT already validating to prevent infinite recursion
         // The isValidating flag is set during move validation to prevent infinite recursion
         if (!ValidationManager.isValidating && CastlingManager.instance != null) {
-            var castlingMoves = CastlingManager.instance.getCastlingMoves(getColor(), board);
+            var castlingMoves = CastlingManager.instance.getCastlingMoves(getColor(), board, currentCol);
             moves = moves.concat(castlingMoves);
         }
         

@@ -1,34 +1,21 @@
 package pieces;
 
 import openfl.geom.Point;
+import utils.MoveUtils;
 
-/**
- * Nuke: Queen + Super-Knight (Nightrider) sliding
- * A powerful custom piece
- */
+/** Nuke: queen + nightrider (combines queen moves with repeated knight leaps). */
 class Nuke extends BasePiece {
     public function new(color:String) {
         super("nuke", color);
     }
-    
+
     override public function getValidMoves(currentRow:Int, currentCol:Int, board:Array<Array<String>>):Array<Point> {
-        var moves:Array<Point> = [];
-        
-        // Queen directions
-        var queenDirs = [
-            {r:1, c:0}, {r:-1, c:0}, {r:0, c:1}, {r:0, c:-1},
-            {r:1, c:1}, {r:1, c:-1}, {r:-1, c:1}, {r:-1, c:-1}
+        var dirs = [
+            {r: 1, c: 0}, {r: -1, c: 0}, {r: 0, c: 1}, {r: 0, c: -1},
+            {r: 1, c: 1}, {r: 1, c: -1}, {r: -1, c: 1}, {r: -1, c: -1}
         ];
-        
-        // Super-Knight (Nightrider) sliding directions
-        var superKnightDirs = [
-            {r:2, c:1}, {r:2, c:-1}, {r:-2, c:1}, {r:-2, c:-1},
-            {r:1, c:2}, {r:1, c:-2}, {r:-1, c:2}, {r:-1, c:-2}
-        ];
-        
-        moves = moves.concat(getSlidingMoves(currentRow, currentCol, queenDirs, board));
-        moves = moves.concat(getSlidingMoves(currentRow, currentCol, superKnightDirs, board));
-        
-        return moves;
+        var q = getSlidingMoves(currentRow, currentCol, dirs, board);
+        var n = MoveUtils.getKnightRiderMoves(currentRow, currentCol, board, getColor());
+        return MoveUtils.mergeUniquePoints(q, n);
     }
 }
